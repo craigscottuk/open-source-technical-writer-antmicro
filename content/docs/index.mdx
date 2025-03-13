@@ -1,13 +1,541 @@
 ---
-title: Hello World
-description: Your first document
+title: Internationalizing Your Next.js App with next-intl
+description: How to Use next-intl for Multilingual Routing, Formatting, and Server Components
+full: true
+
+---
+## **Introduction**
+
+[**next-intl**](https://next-intl-docs.vercel.app/) is a powerful internationalization (i18n) library that simplifies adding multilingual support to your [Next.js](https://nextjs.org/) application. [**Next.js 13**](https://nextjs.org/blog/next-13) introduced the new [App Router](https://nextjs.org/docs/app) without built-in internationalization support, creating a gap that next-intl effectively addressed by providing robust localized routing, dynamic translations, and formatting capabilities. Even though [**Next.js 14 and later versions**](https://nextjs.org/blog/next-14) have since reintroduced built-in internationalization features, next-intl continues to offer additional value through its enhanced customization, ease of use, and compatibility with advanced use cases, including dynamic locale-based formatting and complex translation scenarios.
+
+In this guide, we will explore the core features of next-intl and walk through its integration into a Next.js App Router project, covering localized routing, dynamic translation fetching, and locale-aware formatting.
+
+  
+## **Key Features**
+
+### **1. Localized URL Routing**
+
+**next-intl** supports multiple ways to structure URLs for multilingual applications. We will use **English (EN), Polish (PL), and German (DE)** as our locales, but the setup works for any combination of languages. Depending on your requirements or SEO strategy, you can configure your app to handle internationalization through:
+
+
+- **Prefix-based routing** – Adds a locale prefix to the URL path:
+
+```
+
+/en/about /pl/o-nas /de/ueber-uns
+
+```
+
+- **Domain-based routing** – Uses different domains or subdomains for each locale:
+
+```
+
+en.example.com/about pl.example.com/o-nas de.example.com/ueber-uns
+
+```
+
 ---
 
-Welcome to the docs! You can start writing documents in `/content/docs`.
+### **2. Built-in Localization Utilities**
 
-## What is Next?
+**next-intl** provides **prebuilt hooks** that allow you to fetch translations dynamically based on the user’s locale.
+#### **Fetching Translations with `useTranslations()`**
 
-<Cards>
-  <Card title="Learn more about Next.js" href="https://nextjs.org/docs" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.vercel.app" />
-</Cards>
+The [`useTranslations()`](https://next-intl.dev/docs/usage/messages) hook retrieves localized content from translation files and ensures your text dynamically adapts to the user’s preferred language.
+
+##### **Example: Localizing a Blog Page**
+Define translations for different languages in JSON files:
+
+
+```json
+// messages/en.json
+
+{
+  "Blog": {
+    "title": "Latest News & Updates",
+	"read_more": "Read more"
+  }
+}
+
+```
+
+```json
+// messages/de.json
+
+{
+  "Blog": {
+    "title": "Neuigkeiten & Updates",
+    "read_more": "Mehr lesen"
+  }
+}
+
+
+```
+
+```json
+// messages/pl.json
+
+{
+  "Blog": {
+    "title": "Najnowsze wiadomości i aktualizacje",
+    "read_more": "Czytaj więcej"
+  }
+}
+
+```
+
+
+Then, use `useTranslations()` in a component:
+
+```jsx
+import { useTranslations, useLocale } from 'next-intl';
+
+export default function BlogHeader() {
+  const locale = useLocale(); // Get the current locale (e.g., 'en', 'pl', or 'de')
+  const t = useTranslations('Blog'); // Fetch translations for the "Blog" namespace
+
+  return (
+    <header>
+      <h1>{t('title')}</h1>
+      <button>{t('read_more')}</button>
+      <p>Current locale: {locale}</p>
+    </header>
+  );
+}
+
+```
+
+  
+**Output based on locale**:
+
+- **English (EN)**:
+    - "Latest News & Updates"
+    - Button: "Read more"
+    - "Current locale: en"
+- **Polish (PL)**:
+    - "Najnowsze wiadomości i aktualizacje"
+    - Button: "Czytaj więcej"
+    - "Current locale: pl"
+- **German (DE)**:
+    - "Neuigkeiten & Updates"
+    - Button: "Mehr lesen"
+    - "Current locale: de"
+
+  
+---
+
+### **3. Locale-Aware Formatting**
+
+**next-intl** makes it easy to ensure **consistent formatting of numbers, dates, and times** across different locales.
+
+#### **Formatting Numbers with `useFormatter()`**
+  
+The `useFormatter()` hook provides a built-in API for formatting **currencies, percentages, and other number types** dynamically.
+
+##### **Example: Formatting Currency with Dynamic Locales**
+
+
+```jsx
+import { useFormatter, useLocale } from 'next-intl';
+
+export default function Price({ amount }) {
+  const locale = useLocale(); // Get the current locale
+  const format = useFormatter(); // Use the next-intl formatter
+
+  // Map each locale to its respective currency code
+  const currencyMap = {
+    en: 'GBP',
+    pl: 'PLN',
+    de: 'EUR'
+  };
+
+  return (
+    <p>
+      {format.number(amount, { style: 'currency', currency: currencyMap[locale] })}
+    </p>
+  );
+}
+
+
+```
+
+**Output based on locale**:
+
+- **English (EN):** £1,499.90
+- **Polish (PL):** 1 499,90 zł
+- **German (DE):** 1.499,90 €
+
+---
+#### **Formatting Dates and Times with Dynamic Locales**
+
+You can also format **dates and relative times** dynamically.
+##### **Example: Formatting Dates with Locale Context**
+
+  
+```jsx
+import { useFormatter, useLocale } from 'next-intl';
+
+export default function LastUpdated({ lastUpdated }) {
+  const locale = useLocale(); // Get the current locale
+  const format = useFormatter(); // The formatter automatically adapts to locale
+
+  return (
+    <p>
+      {format.dateTime(lastUpdated, 'medium')} (
+      {format.relativeTime(lastUpdated)})
+      <br />
+      Current locale: {locale}
+    </p>
+  );
+}
+
+```
+
+
+**Output (assuming `lastUpdated` was 2 hours ago)**:
+
+- **English (EN):** "Feb 28, 2023 (2 hours ago)"
+- **Polish (PL):** "28 lut 2023 (2 godziny temu)"
+- **German (DE):** "28. Feb. 2023 (vor 2 Stunden)"
+
+
+---
+### Wrapping Up the Key Features
+  
+Now that you have seen how next-intl handles translations, currency and number formatting, and date and time localization, it is time to install and integrate next-intl into a Next.js project. In the next section, we will walk through setting up a new Next.js application, structuring files for internationalization, and ensuring that your routes and translations work seamlessly.
+
+
+---
+
+
+## **Installation & Setup**
+
+### **1. Creating a New Next.js App**
+
+If you have not set up your Next.js app yet, create a fresh project by running:
+
+```bash
+
+npx create-next-app@latest
+
+```
+
+During setup, you will be prompted to answer a few questions:
+
+```shell
+
+✔ What is your project named? … my-app
+✔ Would you like to use TypeScript? …  Yes
+✔ Would you like to use ESLint? …  Yes
+✔ Would you like to use Tailwind CSS? …  Yes
+✔ Would you like your code inside a `src/` directory? …  Yes
+✔ Would you like to use App Router? (recommended) … Yes
+✔ Would you like to use Turbopack for `next dev`? …  Yes
+✔ Would you like to customize the import alias (`@/*` by default)? … No
+
+```
+
+
+#### **Why Use the `src/` Directory?**
+
+We recommend selecting **Yes** when asked if you would like your code inside a `src/` directory. This approach keeps the **app** folder, **i18n files**, and **middleware** neatly in one place. It is optional—you can still place files at the project root if you prefer. For this guide, we will assume you use `src/` and TypeScript.
+
+
+---
+  
+
+### **2. Installing **next-intl****
+
+Once your Next.js project is ready, ensure you are in the **project directory** and install **next-intl**:
+
+```bash
+
+npm install next-intl
+
+```
+
+
+---
+
+### **3. Project Structure**
+
+Below is an example of how we are going to organize our files:
+
+```
+
+├── messages
+│   ├── en.json
+│   ├── de.json
+│   └── pl.json
+├── next.config.ts
+└── src
+    ├── i18n
+    │   ├── navigation.ts
+    │   ├── request.ts
+    │   └── routing.ts
+    ├── middleware.ts
+    └── app
+        └── [locale]
+            ├── layout.tsx
+            └── page.tsx
+
+```
+
+- **`messages`**: Holds translation files (`.json`) for each supported locale.
+- **`src/i18n`**: Contains utility files for routing and handling translations.
+- **`src/middleware.ts`**: Enables localized routing and manages user locale preferences.
+
+  
+
+---
+
+  
+
+### **4. Creating Translation Files**
+
+Inside the `messages` folder, add the following files for each language:
+
+
+```json
+
+// messages/en.json
+{
+  "Home": {
+    "welcome": "Welcome to our website!",
+    "intro": "Discover our services and see how we can help you.",
+    "cta_explore": "Explore Now",
+    "cta_contact": "Contact Us"
+  }
+}
+
+
+```
+
+  
+
+```json
+
+// messages/de.json
+{
+  "Home": {
+    "welcome": "Willkommen auf unserer Webseite!",
+    "intro": "Entdecken Sie unsere Dienstleistungen und sehen Sie, wie wir Ihnen helfen können.",
+    "cta_explore": "Jetzt entdecken",
+    "cta_contact": "Kontaktieren Sie uns"
+  }
+}
+
+
+```
+
+  
+
+```json
+
+// messages/pl.json
+
+{
+  "Home": {
+    "welcome": "Witamy na naszej stronie!",
+    "intro": "Odkryj nasze usługi i zobacz, jak możemy Ci pomóc.",
+    "cta_explore": "Odkryj teraz",
+    "cta_contact": "Skontaktuj się z nami"
+  }
+}
+
+
+```
+
+  
+As covered in the **Key Features** section, we will use hooks like `useTranslations()` to load and display these strings dynamically.
+
+
+---
+
+  
+
+### **5. Setting Up the I18n Files**
+
+#### **`src/i18n/navigation.ts`**
+
+  
+
+```ts
+
+// src/i18n/navigation.ts
+
+/**
+ * Creates navigation helpers (Link, useRouter, etc.)
+ * based on the routing configuration in routing.ts.
+ */
+import {createNavigation} from 'next-intl/navigation';
+import {routing} from './routing';
+
+export const {
+  Link,
+  getPathname,
+  redirect,
+  usePathname,
+  useRouter
+} = createNavigation(routing);
+
+
+```
+
+  
+
+#### **`src/i18n/routing.ts`**
+
+```ts
+// src/i18n/routing.ts
+
+/**
+ * Define the locales we support (en, de, pl),
+ * the defaultLocale (en), and pathnames for each locale.
+ */
+import {defineRouting} from 'next-intl/routing';
+
+export const routing = defineRouting({
+  locales: ['en', 'de', 'pl'],
+  defaultLocale: 'en',
+  pathnames: {
+    '/': '/',
+    '/projects': {
+      en: '/projects',
+      de: '/projekte',
+      pl: '/realizacje'
+    }
+  }
+});
+
+// These types help with strong typing for pathnames and locales.
+export type Pathnames = keyof typeof routing.pathnames;
+export type Locale = (typeof routing.locales)[number];
+
+
+```
+
+
+#### **`src/i18n/request.ts`**
+
+```ts
+
+// src/i18n/request.ts
+
+/**
+ * This function determines the locale for each incoming request
+ * and dynamically loads the matching JSON translations.
+ */
+import {getRequestConfig} from 'next-intl/server';
+import {routing} from './routing';
+
+export default getRequestConfig(async ({requestLocale}) => {
+  // The locale typically comes from the [locale] segment in the URL
+  // or from the user's browser settings if [locale] is not present.
+  let locale = await requestLocale;
+
+  // Fallback to the default locale if none is found or it's invalid.
+  if (!locale || !routing.locales.includes(locale as any)) {
+    locale = routing.defaultLocale;
+  }
+
+  return {
+    locale,
+    // Dynamically import the translation file for the chosen locale.
+    messages: (
+      await (locale === 'en'
+        ? // For 'en', directly import the English translations.
+          // This also enables HMR (Hot Module Replacement) if using Turbopack.
+          import('../../messages/en.json')
+        : import(`../../messages/${locale}.json`))
+    ).default
+  };
+});
+
+```
+
+---
+
+### **6. Adding the Middleware**
+
+#### **`src/middleware.ts`**
+
+```ts
+// src/middleware.ts
+
+// src/middleware.ts
+
+/**
+ * This middleware intercepts incoming requests and applies the routing rules
+ * defined in your routing configuration. It:
+ *
+ * 1) Redirects the root path `/` to the user's preferred locale or the default locale.
+ * 2) Sets a cookie to remember the user's locale preference.
+ * 3) Adds a locale prefix if it's missing from the URL (e.g., `/path` -> `/en/path`).
+ */
+
+import createMiddleware from 'next-intl/middleware';
+import {routing} from './i18n/routing';
+
+export default createMiddleware(routing);
+
+export const config = {
+  matcher: [
+    // Enable a redirect to a matching locale at the root
+    '/',
+    // Set a cookie to remember the previous locale for
+    // all requests that have a locale prefix
+    '/(pl|de|en)/:path*',
+    // Enable redirects that add missing locales
+    // (e.g. `/pathnames` -> `/en/pathnames`)
+    '/((?!_next|_vercel|.*\\..*).*)'
+  ]
+};
+
+
+```
+ 
+
+**What Does This Middleware Do?**
+
+1. **Root Redirection**: If a user hits `/` (no locale), the middleware will detect their preferred language (or use your default locale) and redirect them accordingly.
+
+2. **Locale Prefixing**: Ensures each path includes the correct locale prefix (`/en`, `/de`, or `/pl`).
+
+3. **Cookie Storage**: Remembers the last-used locale so returning users can continue with the same language.
+
+  
+---
+
+
+
+## **Troubleshooting & Common Pitfalls**
+
+Here are a few common issues and how to address them:
+
+- **404 Errors on Localized Paths**  
+    Make sure your `matcher` in the middleware’s config is set correctly and your `pathnames` in `routing.ts` include all localized paths.
+    
+- **Translation Not Found**  
+    Double-check the JSON keys in your translation files match exactly what you pass to `useTranslations()` (case-sensitive).
+    
+- **Server Component Confusion**  
+    If you’re rendering translations from a **Server Component** (e.g., a shared layout), ensure that the locale context and translation files are accessible server-side. Refer to the next-intl docs on Server Components for detailed guidance.
+
+
+---
+
+
+## **Conclusion & Next Steps**
+
+You have now walked through setting up a multilingual Next.js app with `next-intl`—from installing the library to configuring localized routing, translations, server component integration, and server-side middleware. Whether you are building a small marketing site or a large-scale enterprise application, these same principles apply.
+
+**Where to Go from Here**
+
+- **Edge Cases & Fallbacks**: Explore using fallback locales if certain translations are missing.
+- **Server Components**: Investigate how to pass translations into server components, such as `layout.tsx` files in the App Router, ensuring proper locale detection in SSR contexts.
+- **Caching & Performance**: For large sites with extensive translations, consider caching strategies or dynamic imports to optimize performance.
+- **SEO & URL Structure**: Think about how your localized URLs help search engines index your multilingual content effectively. If domain-based routing is required, adapt your `routing.ts` configuration accordingly.
+- **Official Docs & Community Resources**: Check out the [official next-intl documentation](https://next-intl-docs.vercel.app/) or the [Next.js docs on internationalization routing](https://nextjs.org/docs/app/building-your-application/routing/internationalization) for more advanced scenarios and best practices.
+
+With these steps, you’ll be well-prepared to create a robust, multilingual Next.js application that caters to users worldwide.
